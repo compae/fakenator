@@ -1,5 +1,6 @@
 package com.stratio.runners
 
+import java.io.File
 import java.lang.Double
 import java.util.UUID
 
@@ -8,6 +9,7 @@ import com.stratio.decision.api.messaging.{ColumnNameValue, ColumnNameType}
 import com.stratio.decision.commons.constants.ColumnType
 import com.stratio.decision.commons.exceptions.StratioStreamingException
 import scala.collection.JavaConversions._
+import scala.io.Source
 
 object FakenatorRunner {
 
@@ -16,143 +18,72 @@ object FakenatorRunner {
     .withServerConfig("localhost",9092, "localhost", 2181)
     .init
 
-  val streamName = "drools_poc_stream"
+  val streamName = "c_orders"
 
   println(streamName)
 
   def main(args: Array[String]): Unit = {
-    /*
-    if(args.size == 0) {
-      println(s">> Creating stream: $streamName")
-      createStream
-    }
-*/
-
-     testCreateStream
 
 
-    //insertData
-    //insertDataTopic("topic_A")
-  }
-
-  def createStream(): Unit = {
-    val name = new ColumnNameType("name", ColumnType.STRING)
-    val data1 = new ColumnNameType("data1", ColumnType.INTEGER)
-    val data2 = new ColumnNameType("data2", ColumnType.FLOAT)
-
-    val columnList = Seq(name, data1, data2)
-
-    try {
-      stratioStreamingAPI.createStream(streamName, columnList)
-      stratioStreamingAPI.saveToMongo(streamName)
-      stratioStreamingAPI.listenStream(streamName)
-
-      UUID.randomUUID()
-    } catch {
-      case ssEx: StratioStreamingException => println(ssEx.printStackTrace())
-    }
-  }
-
-
-
-  def testCreateStream():Unit = {
-
-    val data1 = new ColumnNameType("col1", ColumnType.INTEGER)
-    val data2 = new ColumnNameType("col2", ColumnType.STRING)
-
-    val columnList = Seq( data1, data2)
-
-    try {
-      stratioStreamingAPI.createStream(streamName, columnList)
-
-      UUID.randomUUID()
-    } catch {
-      case ssEx: StratioStreamingException => println(ssEx.printStackTrace())
-    }
-
+    insertOrderData
 
   }
 
+  // shell stream creation
+  // create --stream c_orders --definition "order_id.string, day_time_zone.string, client_id.integer, latitude
+  // .double, longitude.double, payment_method.string, credit_card.long, shopping_center.string, employee
+  // .integer, total_amount.double, total_products.integer"
 
-  def insertDataTopic(topicName:String): Unit = {
-
-    //var firstColumnValue = new ColumnNameValue("name", "test")
-    //var secondColumnValue = new ColumnNameValue("data1", new Integer(1))
-    //var thirdColumnValue = new ColumnNameValue("data2", new Double(2))
-
-    var firstColumnValue = new ColumnNameValue("col1",  new Integer(1))
-    var secondColumnValue = new ColumnNameValue("col2", "test_value")
-
-    var streamData = Seq(firstColumnValue, secondColumnValue)
-
-    try {
-      var total: Integer = 10000
-      var i : Integer = 0
-
-      while(i<total) {
-
-        println(s">> Inserting element: $i")
-
-        firstColumnValue = new ColumnNameValue("col1", i)
-        secondColumnValue = new ColumnNameValue("col2", s"test-$i")
-        streamData = Seq(firstColumnValue, secondColumnValue)
-
-        if (topicName!=null){
-           stratioStreamingAPI.insertData(streamName, streamData, topicName)
-        } else {
-          stratioStreamingAPI.insertData(streamName, streamData)
-        }
+    def insertOrderData(): Unit = {
 
 
-        if(i % 10 == 0) {
-          Thread.sleep(250)
-        }
+    val f = new File(getClass.getClassLoader.getResource("order_data.csv").getPath)
+    var count = 0
+
+    Source
+      .fromFile(f)
+      .getLines
+      .drop(1)
+      .foreach { line =>
+
+        val values = line.split(",")
+
+//    order_id,timestamp,client_id,latitude,longitude,payment_method,credit_card,shopping_center,employee,total_amount,total_products
+
+       val orderIdColumnValue = new ColumnNameValue("order_id",  values(0))
+       val timestampColumnValue = new ColumnNameValue("day_time_zone",  values(1))
+       val clientIdColumnValue = new ColumnNameValue("client_id",  new Integer(values(2)))
+       val latitudeColumnValue = new ColumnNameValue("latitude",  new Double(values(3)))
+       val longitudeColumnValue = new ColumnNameValue("longitude",  new Double(values(4)))
+       val paymentMethodColumnValue = new ColumnNameValue("payment_method",  values(5))
+       val creditCardColumnValue = new ColumnNameValue("credit_card",  new java.lang.Long(values(6)))
+       val shoppingCenterColumnValue = new ColumnNameValue("shopping_center",  values(7))
+       val employeeColumnValue = new ColumnNameValue("employee",  new Integer(values(8)))
+       val totalAmountColumnValue = new ColumnNameValue("total_amount",  new Double(values(9)))
+       val totalProductsColumnValue = new ColumnNameValue("total_products",  new Integer(values(10)))
 
 
-        i = i + 1
+       var streamData = Seq(orderIdColumnValue, timestampColumnValue, clientIdColumnValue, latitudeColumnValue,
+         longitudeColumnValue, paymentMethodColumnValue, creditCardColumnValue, shoppingCenterColumnValue,
+         employeeColumnValue, totalAmountColumnValue, totalProductsColumnValue)
+
+       stratioStreamingAPI.insertData(streamName, streamData)
+
+        // Missing stream fields in csv file
+
+        //        "type": "string",
+        //        "name": "city"
+
+        //        "type": "string",
+        //        "name": "country"
+
+        //        "type": "string",
+        //        "name": "channel"
+
+        //        "type": "string",
+        //        "name": "order_size"
 
       }
-    } catch {
-      case ssEx: StratioStreamingException => println(ssEx.printStackTrace())
-    }
-  }
 
-  def insertData(): Unit = {
-
-    //var firstColumnValue = new ColumnNameValue("name", "test")
-    //var secondColumnValue = new ColumnNameValue("data1", new Integer(1))
-    //var thirdColumnValue = new ColumnNameValue("data2", new Double(2))
-
-    var firstColumnValue = new ColumnNameValue("col1",  new Integer(1))
-    var secondColumnValue = new ColumnNameValue("col2", "test_value")
-
-    var streamData = Seq(firstColumnValue, secondColumnValue)
-
-    try {
-      var i: Integer = 1
-
-     // stratioStreamingAPI.listenStream(streamName)
-      stratioStreamingAPI.insertData(streamName, streamData)
-
-      /*
-      while(true) {
-        println(s">> Inserting element: $i")
-        firstColumnValue = new ColumnNameValue("name", s"test-$i")
-        secondColumnValue = new ColumnNameValue("data1", new Integer(i))
-        thirdColumnValue = new ColumnNameValue("data2", new Double(i.toDouble))
-        streamData = Seq(firstColumnValue, secondColumnValue, thirdColumnValue)
-
-        stratioStreamingAPI.insertData(streamName, streamData)
-
-        if(i % 10 == 0) {
-          i = 1
-          Thread.sleep(500)
-        } else {
-          i = i + 1
-        }
-      }*/
-    } catch {
-      case ssEx: StratioStreamingException => println(ssEx.printStackTrace())
-    }
   }
 }
