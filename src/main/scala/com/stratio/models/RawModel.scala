@@ -38,9 +38,10 @@ object RawModel {
 
   val Range_family_product: Map[String, Map[String,Float]] = Source.fromInputStream(
     this.getClass.getClassLoader.getResourceAsStream("family-products.csv")).getLines().map(x => {
-      val splitted = x.split(",")
-      (splitted(0), Map(splitted(1) -> splitted(2).toFloat))
-    }).toMap
+    val splitted = x.split(",")
+    (splitted(0), Map(splitted(1) -> splitted(2).toFloat))
+  }).toSeq.groupBy(_._1).toMap.mapValues(_.map(_._2).reduce((a,b) => a ++ b))
+
 
   def generateLines(): Seq[LineModel] = {
     (1 to generateRandomInt(1,MaxLines)).map(x => {
