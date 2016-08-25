@@ -26,21 +26,22 @@ case class LineModel (product: String,
 
 object RawModel {
 
-  val MaxLines = 30
+  val MaxLines = 10
   val Range_client_id = (1, 30000)
   val Range_payment_method = Source.fromInputStream(
   this.getClass.getClassLoader.getResourceAsStream("payment-methods.txt")).getLines().toSeq
   val Range_shopping_center = Source.fromInputStream(
     this.getClass.getClassLoader.getResourceAsStream("shopping-centers.txt")).getLines().toSeq
   val Range_employee = (1, 300)
-  val Range_quantity = (1, 30)
+  val Range_quantity = (1, 3)
   val R = Random
 
   val Range_family_product: Map[String, Map[String,Float]] = Source.fromInputStream(
     this.getClass.getClassLoader.getResourceAsStream("family-products.csv")).getLines().map(x => {
     val splitted = x.split(",")
     (splitted(0), Map(splitted(1) -> splitted(2).toFloat))
-  }).toSeq.groupBy(_._1).mapValues(_.map(_._2).reduce((a,b) => a ++ b))
+  }).toMap
+  //}).toSeq.groupBy(_._1).mapValues(_.map(_._2).reduce((a,b) => a ++ b))
 
 
   def generateLines(): Seq[LineModel] = {
@@ -65,6 +66,7 @@ object RawModel {
   def generateTimestamp(): String = {
     val datetime = new DateTime().minusDays(generateRandomInt(0,60))
     DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss").print(datetime)
+    //DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss ZZ").print(datetime)
   }
 
   def generateRandomInt(min: Int, max: Int): Int = {
