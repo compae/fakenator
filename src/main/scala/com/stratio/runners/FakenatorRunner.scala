@@ -3,7 +3,6 @@ package com.stratio.runners
 import java.util.UUID
 
 import com.stratio.models.{ConfigModel, RawModel}
-import org.apache.flume.clients.log4jappender.Log4jAppender
 import org.apache.log4j.Logger
 import org.json4s.native.Serialization._
 import org.json4s.{DefaultFormats, Formats}
@@ -19,10 +18,10 @@ object FakenatorRunner {
   implicit val formats: Formats = DefaultFormats
 
   val geolocations = generateGeolocations()
-  val clientIdCreditCard: Map[Int, String] = generateClientIdCreditCard((1 to NumberOfClients).toSeq, Map())
+  val clientIdCreditCard: Map[Int, String] = generateClientIdCreditCard((1 to NumberOfClients), Map())
   val clientIdGeo: Map[Int, (Double, Double)] = generateClientIdGeo(clientIdCreditCard, geolocations)
 
-  lazy val L = Logger.getRootLogger
+  val L = Logger.getLogger(FakenatorRunner.getClass)
 
   val alertMessage = """
                       0: For the same client_id more than one order in less than 5 minutes with the same credit card in
@@ -123,14 +122,5 @@ object FakenatorRunner {
       val index = RawModel.generateRandomInt(0, geolocations.size - 1)
       x._1 -> ((geolocations(index)).split(":")(0).toDouble, (geolocations(index)).split(":")(1).toDouble)
     })
-  }
-
-  private def configureFlumeAppender(hostname: String, port: Int): Unit = {
-    val flumeAppender = new Log4jAppender()
-    flumeAppender.setHostname(hostname)
-    flumeAppender.setPort(port)
-    flumeAppender.activateOptions()
-
-    Logger.getRootLogger().addAppender(flumeAppender)
   }
 }

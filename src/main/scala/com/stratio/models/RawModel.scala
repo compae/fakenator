@@ -40,8 +40,8 @@ object RawModel {
     this.getClass.getClassLoader.getResourceAsStream("family-products.csv")).getLines().map(x => {
     val splitted = x.split(",")
     (splitted(0), Map(splitted(1) -> splitted(2).toFloat))
-  }).toMap
-  //}).toSeq.groupBy(_._1).mapValues(_.map(_._2).reduce((a,b) => a ++ b))
+  //}).toMap
+  }).toSeq.groupBy(_._1).mapValues(_.map(_._2).reduce((a,b) => a ++ b))
 
 
   def generateLines(): Seq[LineModel] = {
